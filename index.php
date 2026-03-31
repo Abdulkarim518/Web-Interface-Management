@@ -40,29 +40,6 @@ $faecher = $pdo->query("SELECT * FROM fach")->fetchAll();
         <!-- Klassen -->
         <div class="card">
 
-            <h2>Klassen anlegen</h2>
-
-            <form action="klassen.php" method="post">
-
-                <input name="name" required placeholder="Klassenname">
-
-                <button>Speichern</button>
-
-            </form>
-
-            <ul>
-                <?php foreach($klassen as $k): ?>
-                <li><?= htmlspecialchars($k["name"]) ?></li>
-                <?php endforeach; ?>
-            </ul>
-
-        </div>
-
-        <hr>
-
-        <!-- Schüler -->
-        <div class="card">
-
             <h2>Schüler anlegen</h2>
 
             <form action="schueler.php" method="post">
@@ -70,13 +47,27 @@ $faecher = $pdo->query("SELECT * FROM fach")->fetchAll();
                 <input name="vorname" placeholder="Vorname" required>
                 <input name="nachname" placeholder="Nachname" required>
 
-                <select name="klasse">
-                    <?php foreach($klassen as $k): ?>
-                        <option value="<?= $k["id"] ?>">
-                            <?= htmlspecialchars($k["name"]) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <hr>
+
+                <button>Speichern</button>
+
+            </form>
+            
+        </div>
+
+
+        <hr>
+
+        <!-- Schüler -->
+        <div class="card">
+
+            <h2>Klasse anlegen</h2>
+
+            <form action="schueler.php" method="post">
+
+                <input name="Klassename" placeholder="Klassename" required>
+
+                <hr>
 
                 <button>Speichern</button>
 
@@ -86,6 +77,28 @@ $faecher = $pdo->query("SELECT * FROM fach")->fetchAll();
 
         <hr>
 
+        <div class="card">
+
+            <h2>Klassenarbeit anlegen</h2>
+
+            <form action="klassenarbeit.php" method="post">
+
+                <input name="Title der Arbeit" placeholder="Title der Arbeit" required>
+
+                <hr>
+                <select>
+                    <?php foreach($faecher as $f): ?>
+                        <option value="<?= $f["id"] ?>">
+                            <?= htmlspecialchars($f["name"]) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <hr>
+                <button>Speichern</button>
+
+            </form>
+
+        </div>
         <!-- Noten -->
         <div class="card">
 
@@ -93,7 +106,7 @@ $faecher = $pdo->query("SELECT * FROM fach")->fetchAll();
 
             <form action="noten.php" method="post">
 
-                <select name="schueler">
+                <select name="schueler wählen">
                     <?php foreach($schueler as $s): ?>
                         <option value="<?= $s["id"] ?>">
                             <?= htmlspecialchars($s["vorname"]) ?>
@@ -102,17 +115,23 @@ $faecher = $pdo->query("SELECT * FROM fach")->fetchAll();
                     <?php endforeach; ?>
                 </select>
 
-                <select name="fach">
-                    <?php foreach($faecher as $f): ?>
-                        <option value="<?= $f["id"] ?>">
-                            <?= htmlspecialchars($f["name"]) ?>
+                <select name="klassenarbeit wählen">
+                    <?php foreach($klassenarbeiten as $ka): ?>
+                        <option value="<?= $ka["id"] ?>">
+                            <?= htmlspecialchars($ka["title"]) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
 
-                <input name="arbeit" placeholder="Klassenarbeit" required>
+                <select name="Note">
+                    <?php foreach($Note as $no): ?>
+                        <option value="<?= $no["id"] ?>">
+                            <?= htmlspecialchars($no["note"]) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
 
-                <input type="number" step="0.1" min="1" max="6" name="note" required>
+                <hr>
 
                 <button>Speichern</button>
 
@@ -125,14 +144,15 @@ $faecher = $pdo->query("SELECT * FROM fach")->fetchAll();
         <!-- Übersicht -->
         <div class="card">
 
-            <h2>Letzte Noten</h2>
+            <h2>Auswertung - Alle Noten</h2>
 
             <table border="1" width="100%">
 
                 <tr>
                     <th>Schüler</th>
+                    <th>klasse</th>
                     <th>Fach</th>
-                    <th>Arbeit</th>
+                    <th>Klassenarbeit</th>
                     <th>Note</th>
                 </tr>
 
