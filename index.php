@@ -9,6 +9,9 @@ $schueler = $pdo->query("SELECT * FROM schueler")->fetchAll();
 
 /* Fächer laden */
 $faecher = $pdo->query("SELECT * FROM fach")->fetchAll();
+
+/* Klassenarbeiten laden */
+$klassenarbeiten = $pdo->query("SELECT * FROM klassenarbeit")->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -17,7 +20,7 @@ $faecher = $pdo->query("SELECT * FROM fach")->fetchAll();
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Schulverwaltungssystem</title>
-        <link rel="stylesheet" href="Style.css">
+        <link rel="stylesheet" href="style.css">
     </head>
 
     <body>
@@ -34,159 +37,115 @@ $faecher = $pdo->query("SELECT * FROM fach")->fetchAll();
                 </ul>
             </nav>
         </header>
-
-        <hr>
-
-        <!-- Klassen -->
+        <!-- Schüler anlegen -->
         <div class="card">
-
             <h2>Schüler anlegen</h2>
-
             <form action="schueler.php" method="post">
+                <div class="row">
+                    <input name="vorname" placeholder="Vorname" required>
+                    <input name="nachname" placeholder="Nachname" required>
+                </div>
+                <div class="row">
+                    
+                        
+                        <?php foreach($klassen as $k): ?>
+                            <option value="<?= $k["id"] ?>">
+                                <?= htmlspecialchars($k["name"]) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    
+               </div>
 
-                <input name="vorname" placeholder="Vorname" required>
-                <input name="nachname" placeholder="Nachname" required>
-
-                <hr>
-
-                <button>Speichern</button>
-
+                 <button type="submit">Schüler Speichern</button>
             </form>
-            
         </div>
 
-
-        <hr>
-
-        <!-- Schüler -->
+        <!-- Klasse anlegen -->
+        <!-- Klasse anlegen -->
         <div class="card">
-
             <h2>Klasse anlegen</h2>
-
-            <form action="schueler.php" method="post">
-
-                <input name="Klassename" placeholder="Klassename" required>
-
-                <hr>
-
-                <button>Speichern</button>
-
+            <form action="index.php" method="post">  <!-- ← Hier geändert -->
+                <input type="hidden" name="action" value="klasse_save">  <!-- ← Neu -->
+                <div class="row">
+                    <input name="klassenname" placeholder="Klassenname" required>
+                </div>
+                <button type="submit">Klasse Speichern</button>
             </form>
-
         </div>
 
-        <hr>
 
+        <!-- Klassenarbeit anlegen -->
+        <!-- Klassenarbeit anlegen -->
         <div class="card">
-
             <h2>Klassenarbeit anlegen</h2>
-
-            <form action="klassenarbeit.php" method="post">
-
-                <input name="Title der Arbeit" placeholder="Title der Arbeit" required>
-
-                <hr>
-                <select>
-                    <?php foreach($faecher as $f): ?>
-                        <option value="<?= $f["id"] ?>">
-                            <?= htmlspecialchars($f["name"]) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <hr>
-                <button>Speichern</button>
-
+            <form action="index.php" method="post">  <!-- ← HIER GEÄNDERT -->
+                <input type="hidden" name="action" value="klassenarbeit_save">  <!-- ← NEU -->
+                <div class="row">
+                    <input name="titel" placeholder="Titel der Arbeit" required>
+                    <div class="row">
+                        
+                    <option value="">Fach wählen</option>
+                            <?php foreach($faecher as $f): ?>
+                                <option value="<?= $f["id"] ?>">
+                                    <?= htmlspecialchars($f["name"]) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        
+                    </div>
+                </div>
+                <button type="submit">Klassenarbeit Speichern</button>
             </form>
-
         </div>
-        <!-- Noten -->
+        <!-- Note eintragen -->
         <div class="card">
-
             <h2>Note eintragen</h2>
-
-            <form action="noten.php" method="post">
-
-                <select name="schueler wählen">
-                    <?php foreach($schueler as $s): ?>
-                        <option value="<?= $s["id"] ?>">
-                            <?= htmlspecialchars($s["vorname"]) ?>
-                            <?= htmlspecialchars($s["nachname"]) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-
-                <select name="klassenarbeit wählen">
-                    <?php foreach($klassenarbeiten as $ka): ?>
-                        <option value="<?= $ka["id"] ?>">
-                            <?= htmlspecialchars($ka["title"]) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-
-                <select name="Note">
-                    <?php foreach($Note as $no): ?>
-                        <option value="<?= $no["id"] ?>">
-                            <?= htmlspecialchars($no["note"]) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-
-                <hr>
-
-                <button>Speichern</button>
-
+            <form action="note_speichern.php" method="post">
+                <div class="row">
+                    <select name="schueler_id" required>
+                        <option value="">Schüler wählen</option>
+                        <?php foreach($schueler as $s): ?>
+                            <option value="<?= $s["id"] ?>">
+                                <?= htmlspecialchars($s["vorname"] . " " . $s["nachname"]) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    
+                    <select name="klassenarbeit_id" required>
+                        <option value="">Klassenarbeit wählen</option>
+                        <?php foreach($klassenarbeiten as $ka): ?>
+                            <option value="<?= $ka["id"] ?>">
+                                <?= htmlspecialchars($ka["titel"]) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    
+                    <select name="note" required>
+                        <option value="">Note wählen</option>
+                        <?php for($n = 1; $n <= 6; $n += 0.5): ?>
+                            <option value="<?= $n ?>"><?= $n ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+                <button type="submit">Note Speichern</button>
             </form>
-
         </div>
 
-        <hr>
-
-        <!-- Übersicht -->
+        <!-- Auswertung - Alle Noten -->
         <div class="card">
-
-            <h2>Auswertung - Alle Noten</h2>
-
+            <h2>Auswertung – Alle Noten</h2>
+            
             <table border="1" width="100%">
-
-                <tr>
-                    <th>Schüler</th>
-                    <th>klasse</th>
-                    <th>Fach</th>
-                    <th>Klassenarbeit</th>
-                    <th>Note</th>
-                </tr>
-
-                <?php
-                    $sql="
-                    SELECT
-                    schueler.vorname,
-                    schueler.nachname,
-                    fach.name AS fach,
-                    note.arbeit_id,
-                    note.note
-                    FROM note 
-                    JOIN schueler ON note.schueler_id=schueler.id
-                    JOIN fach ON note.fach_id=fach.id
-                    ORDER BY note.id DESC
-                    LIMIT 10
-                    ";
-
-                    $daten=$pdo->query($sql)->fetchAll();
-
-                    foreach($daten as $d):
-                    ?>
-
+                <thead>
                     <tr>
-                        <td><?= $d["vorname"] ?> <?= $d["nachname"] ?></td>
-                        <td><?= $d["fach"] ?></td>
-                        <td><?= $d["arbeit"] ?></td>
-                        <td><?= $d["note"] ?></td>
+                        <th>Schüler</th>
+                        <th>Klasse</th>
+                        <th>Fach</th>
+                        <th>Klassenarbeit</th>
+                        <th>Note</th>
                     </tr>
-
-                <?php endforeach; ?>
-
+                </thead>
+                
             </table>
-
         </div>
 
     </body>

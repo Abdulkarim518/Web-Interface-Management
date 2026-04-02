@@ -8,10 +8,9 @@
 
 /* Body */
 body {
-    background: #f4f6f9;
+    background: #eef2f7;
     color: #333;
-    line-height: 1.6;
-    padding: 20px;
+    padding: 30px;
 }
 
 /* Header */
@@ -20,154 +19,137 @@ header {
     color: white;
     padding: 20px;
     border-radius: 10px;
-    margin-bottom: 20px;
     text-align: center;
-    margin-bottom: 15px;
+    margin-bottom: 30px;
+}
+
+#header-title {
+    font-size: 28px;
+    margin-bottom: 10px;
 }
 
 /* Navigation */
-nav ul {
+#main-nav ul {
     list-style: none;
     display: flex;
     justify-content: center;
     gap: 20px;
 }
 
-nav a {
+#main-nav a {
     color: white;
     text-decoration: none;
     font-weight: bold;
 }
 
-nav a:hover {
-    text-decoration: underline;
-}
-
-/* Login Button */
-body > button {
-    display: block;
-    margin: 20px auto;
-    padding: 10px 25px;
-    background: #3498db;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-body > button:hover {
-    background: #2980b9;
-}
-
 /* Cards */
 .card {
     background: white;
-    padding: 20px;
-    margin: 30px auto;
+    padding: 30px;
+    margin: 25px auto;
     max-width: 800px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 
-/* Headings */
-h2, h1 {
-    margin-bottom: 15px;
+/* Titles */
+.card h2 {
+    margin-bottom: 20px;
+    font-size: 22px;
     color: #2c3e50;
 }
 
 /* Forms */
-form label {
-    display: inline-block;
-    width: 150px;
-    font-weight: bold;
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 }
 
-form input {
-    padding: 6px;
-    width: 200px;
+/* Inputs & Selects */
+form input,
+form select {
+    width: 100%;
+    height: 45px;
+    padding: 10px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #f9f9f9;
+}
+
+form input:focus,
+form select:focus {
+    outline: none;
+    border-color: #2d7dd2;
+    background: white;
 }
 
 /* Buttons */
 form button {
-    margin-top: 10px;
-    padding: 8px 15px;
-    background: #27ae60;
+    align-self: center;
+    padding: 12px 25px;
+    background: #2d7dd2;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-}
-
-form button[type="reset"] {
-    background: #e74c3c;
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 200px;
+    transition: 0.3s;
 }
 
 form button:hover {
-    opacity: 0.9;
+    background: #1c5fa8;
 }
 
-/* Tables */
+.row {
+    display: flex;
+    gap: 15px;
+}
+
+.row input,
+.row select {
+    flex: 1;
+}
+/* Table */
 table {
     width: 100%;
-    max-width: 800px;
-    margin: 20px auto;
     border-collapse: collapse;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-top: 15px;
 }
 
+/* Table Head */
 table th {
-    background: #34495e;
+    background: #2c3e50;
     color: white;
-    padding: 10px;
+    padding: 12px;
+    text-align: left;
 }
 
+/* Table Body */
 table td {
     padding: 10px;
-    text-align: center;
+    border-bottom: 1px solid #eee;
 }
 
+/* Zebra rows */
 table tr:nth-child(even) {
-    background: #f2f2f2;
-}
-
-/* Average text */
-p {
-    text-align: center;
-    margin: 15px 0;
-    font-size: 16px;
-}
-
-/* Divider */
-hr {
-    margin: 30px 0;
-    border: none;
-    height: 1px;
-    background: #ccc;
+    background: #f9f9f9;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-
-    nav ul {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    form label {
-        width: 100%;
-        margin-bottom: 5px;
-    }
-
-    form input {
-        width: 100%;
-        margin-bottom: 10px;
+    body {
+        padding: 15px;
     }
 
     .card {
-        margin: 20px 10px;
+        padding: 20px;
+    }
+
+    table {
+        font-size: 12px;
     }
 }
