@@ -1,58 +1,43 @@
 <?php
-    require "dbConnect.php";
+require "dbConnect.php";
 
-    $sql = "
-    SELECT
-        s.vorname,
-        s.nachname,
-        f.name AS fach,
-        n.arbeit,
-        n.note
-    FROM note n
-    JOIN schueler s ON n.schueler_id = s.id
-    JOIN fach f ON n.fach_id = f.id
-    ";
+$sql = "
+SELECT
+    s.vorname,
+    s.nachname,
+    k.name AS klasse,
+    f.name AS fach,
+    ka.titel AS arbeit,
+    n.note
+FROM note n
+JOIN schueler s ON n.schueler_id = s.id
+JOIN klasse k ON s.klasse_id = k.id
+JOIN klassenarbeit ka ON n.klassenarbeit_id = ka.id
+JOIN fach f ON ka.fach_id = f.id
+";
 
-    $daten = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+$daten = $pdo->query($sql)->fetchAll();
 ?>
 
-<!DOCTYPE html>
-<html lang="de">
-    <head>
-        <meta charset="UTF-8">
-        <title>Auswertung</title>
-        <link rel="stylesheet" href="Style.css">
-    </head>
+<h2>Auswertung</h2>
 
-    <body>
+<table border="1">
+<tr>
+<th>Schüler</th>
+<th>Klasse</th>
+<th>Fach</th>
+<th>Arbeit</th>
+<th>Note</th>
+</tr>
 
-        <h2>Auswertung</h2>
+<?php foreach($daten as $d): ?>
+<tr>
+<td><?= $d["vorname"] ?> <?= $d["nachname"] ?></td>
+<td><?= $d["klasse"] ?></td>
+<td><?= $d["fach"] ?></td>
+<td><?= $d["arbeit"] ?></td>
+<td><?= $d["note"] ?></td>
+</tr>
+<?php endforeach; ?>
 
-        <table border="1" width="100%">
-
-            <tr>
-                <th>Schüler</th>
-                <th>Fach</th>
-                <th>Arbeit</th>
-                <th>Note</th>
-            </tr>
-
-            <?php if(count($daten) === 0): ?>
-                <tr>
-                    <td colspan="4">Keine Daten vorhanden</td>
-                </tr>
-            <?php endif; ?>
-
-            <?php foreach($daten as $d): ?>
-                <tr>
-                    <td><?= htmlspecialchars($d["vorname"]) ?> <?= htmlspecialchars($d["nachname"]) ?></td>
-                    <td><?= htmlspecialchars($d["fach"]) ?></td>
-                    <td><?= htmlspecialchars($d["arbeit"]) ?></td>
-                    <td><?= htmlspecialchars($d["note"]) ?></td>
-                </tr>
-            <?php endforeach; ?>
-
-        </table>
-
-    </body>
-</html>
+</table>
