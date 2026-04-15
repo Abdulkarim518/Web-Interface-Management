@@ -1,6 +1,6 @@
 <?php
 $host = '127.0.0.1';
-$dbName = 'schuleverwaltung';
+$dbName = 'schulverwaltung';
 $user = 'root';
 $pass = '';
 
