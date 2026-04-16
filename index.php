@@ -1,11 +1,22 @@
 <?php
-// 1. DATENBANKVERBINDUNG
 require "dbConnect.php";
 
-$fehler = [];
-$erfolg = "";
+// GETRENNTE FEHLERARRAYS
+$fehlerKlasseSave = [];
+$fehlerKlasseDelete = [];
 
-// 2. LOGIK: DATEN SPEICHERN (POST HANDLING)
+$fehlerSchuelerSave = [];
+$fehlerSchuelerDelete = [];
+
+$fehlerFachSave = [];
+
+$fehlerKlassenarbeitSave = [];
+$fehlerKlassenarbeitDelete = [];
+
+$fehlerNoteSave = [];
+$fehlerNoteDelete = [];
+
+// POST-LOGIK
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $action = $_POST["action"] ?? null;
 
@@ -15,17 +26,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $schuljahr = trim($_POST["schuljahr"] ?? "");
 
         if ($klassenname === "") {
-            $fehler[] = "Bitte einen Klassennamen eingeben.";
+            $fehlerKlasseSave[] = "Bitte einen Klassennamen eingeben.";
         } else {
             $stmt = $pdo->prepare("INSERT INTO klasse (name, schuljahr) VALUES (?, ?)");
             $stmt->execute([$klassenname, $schuljahr ?: null]);
-            header("Location: index.php");
+            header("Location: index.php#klassen-liste");
             exit;
         }
     }
 
     // Schüler speichern
-    if ($action === "schueler_save") {
+    elseif ($action === "schueler_save") {
         $vorname = trim($_POST["vorname"] ?? "");
         $nachname = trim($_POST["nachname"] ?? "");
         $geburtsdatum = $_POST["geburtsdatum"] ?? null;
@@ -33,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $klasse_id = $_POST["klasse_id"] ?? "";
 
         if ($vorname === "" || $nachname === "" || $klasse_id === "") {
-            $fehler[] = "Bitte Vorname, Nachname und Klasse ausfüllen.";
+            $fehlerSchuelerSave[] = "Bitte Vorname, Nachname und Klasse ausfüllen.";
         } else {
             $stmt = $pdo->prepare("
                 INSERT INTO schueler (vorname, nachname, geburtsdatum, schueler_nr, klasse_id)
@@ -46,66 +57,61 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $schueler_nr ?: null,
                 $klasse_id
             ]);
-            header("Location: index.php");
+            header("Location: index.php#schueler-liste");
             exit;
         }
     }
 
     // Fach speichern
-    if ($action === "fach_save") {
+    elseif ($action === "fach_save") {
         $name = trim($_POST["name"] ?? "");
 
         if ($name === "") {
-            $fehler[] = "Bitte einen Fachnamen eingeben.";
+            $fehlerFachSave[] = "Bitte einen Fachnamen eingeben.";
         } else {
             $stmt = $pdo->prepare("INSERT INTO fach (name) VALUES (?)");
             $stmt->execute([$name]);
-            header("Location: index.php");
+            header("Location: index.php#fach-bereich");
             exit;
         }
     }
 
     // Klassenarbeit speichern
-    if ($action === "klassenarbeit_save") {
+    elseif ($action === "klassenarbeit_save") {
         $titel = trim($_POST["titel"] ?? "");
         $fach_id = $_POST["fach_id"] ?? "";
         $klasse_id = $_POST["klasse_id"] ?? "";
         $datum = $_POST["datum"] ?? "";
-        $gewichtung = $_POST["gewichtung"] ?? "";
 
         if ($titel === "" || $fach_id === "" || $klasse_id === "" || $datum === "") {
-            $fehler[] = "Bitte Titel, Fach, Klasse und Datum ausfüllen.";
-        } elseif ($gewichtung !== "" && $gewichtung <= 0) {
-            $fehler[] = "Die Gewichtung muss größer als 0 sein.";
+            $fehlerKlassenarbeitSave[] = "Bitte Titel, Fach, Klasse und Datum ausfüllen.";
         } else {
             $stmt = $pdo->prepare("
-                INSERT INTO klassenarbeit (titel, fach_id, klasse_id, datum, gewichtung)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO klassenarbeit (titel, fach_id, klasse_id, datum)
+                VALUES (?, ?, ?, ?)
             ");
             $stmt->execute([
                 $titel,
                 $fach_id,
                 $klasse_id,
-                $datum,
-                $gewichtung !== "" ? $gewichtung : 1.00
+                $datum
             ]);
-            header("Location: index.php");
+            header("Location: index.php#klassenarbeiten-liste");
             exit;
         }
     }
 
     // Note speichern
-    if ($action === "note_save") {
+    elseif ($action === "note_save") {
         $schueler_id = $_POST["schueler_id"] ?? "";
         $klassenarbeit_id = $_POST["klassenarbeit_id"] ?? "";
         $note = $_POST["note"] ?? "";
 
         if ($schueler_id === "" || $klassenarbeit_id === "" || $note === "") {
-            $fehler[] = "Bitte Schüler, Klassenarbeit und Note auswählen.";
+            $fehlerNoteSave[] = "Bitte Schüler, Klassenarbeit und Note auswählen.";
         } elseif (!is_numeric($note) || $note < 1 || $note > 6) {
-            $fehler[] = "Die Note muss zwischen 1 und 6 liegen.";
+            $fehlerNoteSave[] = "Die Note muss zwischen 1 und 6 liegen.";
         } else {
-            // prüfen, ob für diese Kombination schon eine Note existiert
             $check = $pdo->prepare("
                 SELECT id FROM note
                 WHERE schueler_id = ? AND klassenarbeit_id = ?
@@ -128,16 +134,93 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $stmt->execute([$schueler_id, $klassenarbeit_id, $note]);
             }
 
-            header("Location: index.php");
+            header("Location: index.php#auswertung");
+            exit;
+        }
+    }
+
+    // Klasse löschen
+    elseif ($action === "klasse_delete") {
+        $id = $_POST["klasse_id"] ?? "";
+
+        if ($id !== "") {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM schueler WHERE klasse_id = ?");
+            $stmt->execute([$id]);
+            $schuelerAnzahl = $stmt->fetchColumn();
+
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM klassenarbeit WHERE klasse_id = ?");
+            $stmt->execute([$id]);
+            $arbeitenAnzahl = $stmt->fetchColumn();
+
+            if ($schuelerAnzahl > 0 || $arbeitenAnzahl > 0) {
+                $fehlerKlasseDelete[] = "Die Klasse kann nicht gelöscht werden, weil noch Schüler oder Klassenarbeiten damit verknüpft sind.";
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM klasse WHERE id = ?");
+                $stmt->execute([$id]);
+                header("Location: index.php#klassen-liste");
+                exit;
+            }
+        }
+    }
+
+    // Schüler löschen
+    elseif ($action === "schueler_delete") {
+        $id = $_POST["schueler_id"] ?? "";
+
+        if ($id !== "") {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM note WHERE schueler_id = ?");
+            $stmt->execute([$id]);
+            $notenAnzahl = $stmt->fetchColumn();
+
+            if ($notenAnzahl > 0) {
+                $fehlerSchuelerDelete[] = "Der Schüler kann nicht gelöscht werden, weil noch Noten mit ihm verknüpft sind.";
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM schueler WHERE id = ?");
+                $stmt->execute([$id]);
+                header("Location: index.php#schueler-liste");
+                exit;
+            }
+        }
+    }
+
+    // Klassenarbeit löschen
+    elseif ($action === "klassenarbeit_delete") {
+        $id = $_POST["klassenarbeit_id"] ?? "";
+
+        if ($id !== "") {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM note WHERE klassenarbeit_id = ?");
+            $stmt->execute([$id]);
+            $notenAnzahl = $stmt->fetchColumn();
+
+            if ($notenAnzahl > 0) {
+                $fehlerKlassenarbeitDelete[] = "Die Klassenarbeit kann nicht gelöscht werden, weil noch Noten damit verknüpft sind.";
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM klassenarbeit WHERE id = ?");
+                $stmt->execute([$id]);
+                header("Location: index.php#klassenarbeiten-liste");
+                exit;
+            }
+        }
+    }
+
+    // Note löschen
+    elseif ($action === "note_delete") {
+        $id = $_POST["note_id"] ?? "";
+
+        if ($id !== "") {
+            $stmt = $pdo->prepare("DELETE FROM note WHERE id = ?");
+            $stmt->execute([$id]);
+            header("Location: index.php#auswertung");
             exit;
         }
     }
 }
 
-// 3. LOGIK: DATEN LADEN (FÜR DROPDOWNS UND TABELLEN)
+// DATEN LADEN
 $klassen = $pdo->query("SELECT * FROM klasse ORDER BY name ASC")->fetchAll();
 $schueler = $pdo->query("SELECT * FROM schueler ORDER BY nachname ASC, vorname ASC")->fetchAll();
 $faecher = $pdo->query("SELECT * FROM fach ORDER BY name ASC")->fetchAll();
+
 $klassenarbeiten = $pdo->query("
     SELECT ka.*, f.name AS fach_name, k.name AS klassen_name
     FROM klassenarbeit ka
@@ -148,6 +231,7 @@ $klassenarbeiten = $pdo->query("
 
 $noten = $pdo->query("
     SELECT 
+        n.id,
         s.vorname,
         s.nachname,
         k.name AS klasse,
@@ -172,31 +256,31 @@ $noten = $pdo->query("
     <title>Schulverwaltungssystem</title>
     <link rel="stylesheet" href="Style.css">
 </head>
-<body>
+<body id="start">
 
 <header id="seiten-header">
     <h1 id="header-title">Schulverwaltungssystem</h1>
     <nav id="main-nav">
         <ul>
-            <li><a href="index.php">Start</a></li>
-            <li><a href="#">Schüler</a></li>
-            <li><a href="#">Noten</a></li>
-            <li><a href="#">Auswertung</a></li>
+            <li><a href="#start">Start</a></li>
+            <li><a href="#schueler-bereich">Schüler</a></li>
+            <li><a href="#noten-bereich">Noten</a></li>
+            <li><a href="#auswertung">Auswertung</a></li>
         </ul>
     </nav>
 </header>
 
-<?php if (!empty($fehler)): ?>
-    <div class="card">
-        <h2>Fehler</h2>
-        <?php foreach ($fehler as $f): ?>
-            <p><?= htmlspecialchars($f) ?></p>
-        <?php endforeach; ?>
-    </div>
-<?php endif; ?>
-
-<div class="card">
+<div class="card" id="klassen-bereich">
     <h2>Klasse anlegen</h2>
+
+    <?php if (!empty($fehlerKlasseSave)): ?>
+        <div class="error-box">
+            <?php foreach ($fehlerKlasseSave as $f): ?>
+                <p><?= htmlspecialchars($f) ?></p>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
     <form method="post">
         <input type="hidden" name="action" value="klasse_save">
         <input name="klassenname" placeholder="Name der Klasse (z.B. E2FI)" required>
@@ -205,8 +289,56 @@ $noten = $pdo->query("
     </form>
 </div>
 
-<div class="card">
+<div class="card" id="klassen-liste">
+    <h2>Klassen Übersicht</h2>
+
+    <?php if (!empty($fehlerKlasseDelete)): ?>
+        <div class="error-box">
+            <?php foreach ($fehlerKlasseDelete as $f): ?>
+                <p><?= htmlspecialchars($f) ?></p>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+    <table class="modern-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Klasse</th>
+                <th>Schuljahr</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($klassen as $k): ?>
+                <tr>
+                    <td><?= htmlspecialchars($k["id"]) ?></td>
+                    <td class="highlight"><?= htmlspecialchars($k["name"]) ?></td>
+                    <td><?= htmlspecialchars($k["schuljahr"]) ?></td>
+                    <td class="action-cell">
+                        <form method="post" onsubmit="return confirm('Klasse wirklich löschen?');">
+                            <input type="hidden" name="action" value="klasse_delete">
+                            <input type="hidden" name="klasse_id" value="<?= htmlspecialchars($k["id"]) ?>">
+                            <button type="submit" class="delete-btn">✖</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+
+<div class="card" id="schueler-bereich">
     <h2>Schüler anlegen</h2>
+
+    <?php if (!empty($fehlerSchuelerSave)): ?>
+        <div class="error-box">
+            <?php foreach ($fehlerSchuelerSave as $f): ?>
+                <p><?= htmlspecialchars($f) ?></p>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
     <form method="post">
         <input type="hidden" name="action" value="schueler_save">
         <div class="row">
@@ -229,8 +361,58 @@ $noten = $pdo->query("
     </form>
 </div>
 
-<div class="card">
+<div class="card" id="schueler-liste">
+    <h2>Schüler Übersicht</h2>
+
+    <?php if (!empty($fehlerSchuelerDelete)): ?>
+        <div class="error-box">
+            <?php foreach ($fehlerSchuelerDelete as $f): ?>
+                <p><?= htmlspecialchars($f) ?></p>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+    <table class="modern-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Geburtsdatum</th>
+                <th>Schüler-ID</th>
+                <th>Klasse-ID</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($schueler as $s): ?>
+                <tr>
+                    <td class="highlight"><?= htmlspecialchars($s["vorname"] . " " . $s["nachname"]) ?></td>
+                    <td><?= htmlspecialchars($s["geburtsdatum"]) ?></td>
+                    <td><?= htmlspecialchars($s["schueler_nr"]) ?></td>
+                    <td><?= htmlspecialchars($s["klasse_id"]) ?></td>
+                    <td class="action-cell">
+                        <form method="post" onsubmit="return confirm('Schüler wirklich löschen?');">
+                            <input type="hidden" name="action" value="schueler_delete">
+                            <input type="hidden" name="schueler_id" value="<?= htmlspecialchars($s["id"]) ?>">
+                            <button type="submit" class="delete-btn">✖</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+
+<div class="card" id="fach-bereich">
     <h2>Fach anlegen</h2>
+
+    <?php if (!empty($fehlerFachSave)): ?>
+        <div class="error-box">
+            <?php foreach ($fehlerFachSave as $f): ?>
+                <p><?= htmlspecialchars($f) ?></p>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
     <form method="post">
         <input type="hidden" name="action" value="fach_save">
         <input name="name" placeholder="Fachname (z.B. Mathematik)" required>
@@ -238,8 +420,17 @@ $noten = $pdo->query("
     </form>
 </div>
 
-<div class="card">
+<div class="card" id="noten-bereich">
     <h2>Klassenarbeit anlegen</h2>
+
+    <?php if (!empty($fehlerKlassenarbeitSave)): ?>
+        <div class="error-box">
+            <?php foreach ($fehlerKlassenarbeitSave as $f): ?>
+                <p><?= htmlspecialchars($f) ?></p>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
     <form method="post">
         <input type="hidden" name="action" value="klassenarbeit_save">
         <input name="titel" placeholder="Titel der Arbeit" required>
@@ -264,15 +455,64 @@ $noten = $pdo->query("
 
         <div class="row">
             <input type="date" name="datum" required>
-            <input type="number" step="0.01" min="0.01" name="gewichtung" placeholder="Gewichtung z.B. 1.00">
         </div>
 
         <button type="submit">Speichern</button>
     </form>
 </div>
 
+<div class="card" id="klassenarbeiten-liste">
+    <h2>Klassenarbeiten Übersicht</h2>
+
+    <?php if (!empty($fehlerKlassenarbeitDelete)): ?>
+        <div class="error-box">
+            <?php foreach ($fehlerKlassenarbeitDelete as $f): ?>
+                <p><?= htmlspecialchars($f) ?></p>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+    <table class="modern-table">
+        <thead>
+            <tr>
+                <th>Titel</th>
+                <th>Fach</th>
+                <th>Klasse</th>
+                <th>Datum</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($klassenarbeiten as $ka): ?>
+                <tr>
+                    <td class="highlight"><?= htmlspecialchars($ka["titel"]) ?></td>
+                    <td><?= htmlspecialchars($ka["fach_name"]) ?></td>
+                    <td><?= htmlspecialchars($ka["klassen_name"]) ?></td>
+                    <td><?= htmlspecialchars($ka["datum"]) ?></td>
+                    <td class="action-cell">
+                        <form method="post" onsubmit="return confirm('Klassenarbeit wirklich löschen?');">
+                            <input type="hidden" name="action" value="klassenarbeit_delete">
+                            <input type="hidden" name="klassenarbeit_id" value="<?= htmlspecialchars($ka["id"]) ?>">
+                            <button type="submit" class="delete-btn">✖</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+
 <div class="card">
     <h2>Note eintragen</h2>
+
+    <?php if (!empty($fehlerNoteSave)): ?>
+        <div class="error-box">
+            <?php foreach ($fehlerNoteSave as $f): ?>
+                <p><?= htmlspecialchars($f) ?></p>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
     <form method="post">
         <input type="hidden" name="action" value="note_save">
 
@@ -305,8 +545,17 @@ $noten = $pdo->query("
     </form>
 </div>
 
-<div class="card">
+<div class="card" id="auswertung">
     <h2>Auswertung</h2>
+
+    <?php if (!empty($fehlerNoteDelete)): ?>
+        <div class="error-box">
+            <?php foreach ($fehlerNoteDelete as $f): ?>
+                <p><?= htmlspecialchars($f) ?></p>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
     <table>
         <thead>
             <tr>
@@ -316,6 +565,7 @@ $noten = $pdo->query("
                 <th>Arbeit</th>
                 <th>Datum</th>
                 <th>Note</th>
+                <th>Löschen</th>
             </tr>
         </thead>
         <tbody>
@@ -327,6 +577,13 @@ $noten = $pdo->query("
                     <td><?= htmlspecialchars($n["titel"]) ?></td>
                     <td><?= htmlspecialchars($n["datum"]) ?></td>
                     <td><strong><?= htmlspecialchars($n["note"]) ?></strong></td>
+                    <td>
+                        <form method="post" onsubmit="return confirm('Note wirklich löschen?');">
+                            <input type="hidden" name="action" value="note_delete">
+                            <input type="hidden" name="note_id" value="<?= htmlspecialchars($n["id"]) ?>">
+                            <button type="submit">Löschen</button>
+                        </form>
+                    </td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
