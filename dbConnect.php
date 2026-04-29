@@ -11,5 +11,4 @@ try {
 } catch(PDOException $e) {
     die("Verbindungsfehler: " . $e->getMessage());
 }
-// HIER DARF NICHTS MEHR STEHEN! Kein HTML, kein Echo, kein foreach.
 ?>
